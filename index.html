@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>여러가지 사각형 하늘계단 게임</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(180deg, #38bdf8 0%, #bae6fd 100%);
+      --card-bg: #ffffff;
+      --primary-blue: #0284c7;
+      --primary-red: #e11d48;
+      --text-main: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #38bdf8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      max-height: 880px;
+      background: var(--bg-gradient);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+
+    @media (min-width: 500px) {
+      .game-wrapper {
+        height: 94vh;
+        border-radius: 32px;
+        overflow: hidden;
+        border: 4px solid #ffffff;
+      }
+    }
+
+    .header {
+      height: 64px;
+      padding: 0 16px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+      z-index: 20;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      transition: background 0.15s;
+    }
+
+    .btn-icon:active {
+      background: rgba(0,0,0,0.08);
+    }
+
+    .title-text {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0369a1;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .heart-box {
+      font-size: 16px;
+      letter-spacing: -1px;
+    }
+
+    .badge-info {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0369a1;
+    }
+
+    .main-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .question-box {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 16px 14px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      border: 2px solid #ffffff;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .q-floor-tag {
+      font-size: 11px;
+      font-weight: 800;
+      color: #0284c7;
+      background: #e0f2fe;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+
+    .q-text {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.38;
+      word-break: keep-all;
+    }
+
+    .viewport-3d {
+      flex: 1;
+      background: linear-gradient(180deg, #7dd3fc 0%, #e0f2fe 100%);
+      border-radius: 24px;
+      position: relative;
+      overflow: hidden;
+      border: 3px solid #ffffff;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+    }
+
+    .stairs-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    .stair-item {
+      position: absolute;
+      width: 130px;
+      height: 32px;
+      background: #fde047;
+      border: 2.5px solid #ca8a04;
+      border-radius: 10px;
+      box-shadow: 0 5px 0 #a16207;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      color: #713f12;
+      transition: background 0.3s, border-color 0.3s, transform 0.3s;
+    }
+
+    .stair-item.current {
+      background: #facc15;
+      border-color: #854d0e;
+      box-shadow: 0 5px 0 #713f12, 0 0 14px rgba(250, 204, 21, 0.9);
+    }
+
+    .stair-item.goal {
+      background: #f97316;
+      border-color: #c2410c;
+      color: #ffffff;
+      box-shadow: 0 5px 0 #9a3412;
+    }
+
+    .charizard-box {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      z-index: 15;
+      transition: left 0.35s ease-out, top 0.35s ease-out;
+      pointer-events: none;
+    }
+
+    .charizard-svg {
+      width: 100%;
+      height: 100%;
+      transform-origin: bottom center;
+    }
+
+    .charizard-shadow {
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 7px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 50%;
+      transition: transform 0.35s, opacity 0.35s;
+    }
+
+    @keyframes jumpOneStep {
+      0% { transform: scale(1, 1) translateY(0); }
+      25% { transform: scale(1.2, 0.8) translateY(6px); }
+      55% { transform: scale(0.9, 1.2) translateY(-38px); }
+      85% { transform: scale(1.05, 0.95) translateY(2px); }
+      100% { transform: scale(1, 1) translateY(0); }
+    }
+
+    .charizard-box.jumping .charizard-svg {
+      animation: jumpOneStep 0.38s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .charizard-box.jumping .charizard-shadow {
+      transform: translateX(-50%) scale(0.3);
+      opacity: 0.2;
+    }
+
+    .ox-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-ox {
+      height: 68px;
+      border: none;
+      border-radius: 20px;
+      font-size: 30px;
+      font-weight: 900;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      transition: transform 0.08s;
+    }
+
+    .btn-ox:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+    }
+
+    .btn-o-style {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      border-bottom: 3.5px solid #0369a1;
+    }
+
+    .btn-x-style {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      border-bottom: 3.5px solid #be123c;
+    }
+
+    .btn-hint {
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .popup-card {
+      background: white;
+      width: 100%;
+      max-width: 340px;
+      border-radius: 26px;
+      padding: 22px 20px;
+      box-shadow: 0 20px 30px rgba(0,0,0,0.18);
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.show .popup-card {
+      transform: scale(1);
+    }
+
+    .popup-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .explain-card {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.45;
+      margin: 12px 0;
+    }
+
+    .btn-main {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn-main:active {
+      transform: scale(0.98);
+    }
+
+    .btn-sub {
+      width: 100%;
+      padding: 11px;
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    .time-options {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .time-chip {
+      flex: 1;
+      padding: 11px;
+      border: 2px solid #cbd5e1;
+      background: white;
+      border-radius: 14px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .time-chip.active {
+      border-color: #0284c7;
+      background: #f0f9ff;
+      color: #0284c7;
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-icon" id="btnHome">🏠</button>
+      <span class="title-text">여러가지 사각형 하늘계단 게임</span>
+    </div>
+    <div class="header-right">
+      <div class="heart-box" id="heartBox">❤️❤️❤️</div>
+      <div class="badge-info">⏱️ <span id="timeText">05:00</span></div>
+      <div class="badge-info" style="background:#fef3c7; border-color:#fde047; color:#854d0e;">
+        🚩 <span id="floorText">1F</span>
+      </div>
+      <button class="btn-icon" id="btnPause">⏸️</button>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="question-box">
+      <div class="q-floor-tag" id="qFloorTag">1층 도전</div>
+      <div class="q-text" id="qText">문제를 불러오는 중...</div>
+    </div>
+
+    <div class="viewport-3d" id="viewport">
+      <div class="stairs-container" id="stairsStage">
+        <div class="charizard-box" id="charizard">
+          <div class="charizard-shadow"></div>
+          <svg class="charizard-svg" viewBox="0 0 100 100">
+            <path d="M 20 70 Q 10 65 12 55 Q 22 50 25 65 Z" fill="#ef4444"/>
+            <path d="M 18 68 Q 12 65 14 58 Q 20 54 22 65 Z" fill="#f59e0b"/>
+            <path d="M 40 45 Q 20 20 10 35 Q 25 50 42 55 Z" fill="#065f46"/>
+            <ellipse cx="50" cy="60" rx="20" ry="22" fill="#f97316"/>
+            <ellipse cx="53" cy="62" rx="13" ry="15" fill="#fef08a"/>
+            <path d="M 40 38 C 40 20 65 20 68 35 C 70 42 60 48 48 45 Z" fill="#f97316"/>
+            <path d="M 45 25 Q 35 15 32 20 Q 40 28 44 28 Z" fill="#ea580c"/>
+            <path d="M 52 23 Q 48 10 42 14 Q 48 24 51 25 Z" fill="#ea580c"/>
+            <circle cx="58" cy="30" r="3" fill="#ffffff"/>
+            <circle cx="59" cy="30" r="1.5" fill="#0f172a"/>
+            <path d="M 62 38 Q 66 38 65 41" stroke="#431407" stroke-width="2" fill="none"/>
+            <ellipse cx="42" cy="80" rx="6" ry="4" fill="#ea580c"/>
+            <ellipse cx="60" cy="80" rx="6" ry="4" fill="#ea580c"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="ox-controls">
+      <button class="btn-ox btn-o-style" id="btnO">
+        O
+        <span class="btn-hint">[←] 참</span>
+      </button>
+      <button class="btn-ox btn-x-style" id="btnX">
+        X
+        <span class="btn-hint">[→] 거짓</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="modal-overlay show" id="startModal">
+    <div class="popup-card">
+      <div style="font-size: 46px; margin-bottom: 6px;">🔥🐉</div>
+      <div class="popup-title">여러가지 사각형 하늘계단</div>
+      <p style="font-size: 13px; color: #64748b; line-height: 1.4;">
+        중2-2 수학 사각형의 성질 100문제 제패!<br>
+        1층부터 출발하여 100층 정상에 도달하세요!
+      </p>
+
+      <div class="time-options">
+        <button class="time-chip active" id="btnTime5" onclick="setSelectTime(300)">⏱️ 5분 도전</button>
+        <button class="time-chip" id="btnTime10" onclick="setSelectTime(600)">⏱️ 10분 도전</button>
+      </div>
+
+      <button class="btn-main" id="btnStartGame">등반 시작하기 (100F 도전)</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="wrongModal">
+    <div class="popup-card">
+      <div style="font-size: 38px; margin-bottom: 2px;">💔</div>
+      <div class="popup-title" style="color: #e11d48;">오답입니다! (하트 -1)</div>
+      <p style="font-size: 13px; color: #475569;" id="wrongAnswerDiff"></p>
+      
+      <div class="explain-card">
+        <div style="font-weight: 800; color: #0284c7; margin-bottom: 3px;">💡 개념 해설</div>
+        <div id="explainContent">해설 내용</div>
+      </div>
+
+      <button class="btn-main" id="btnNextWrong">다음 문제 도전하기 🧗</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="pauseModal">
+    <div class="popup-card">
+      <div style="font-size: 38px; margin-bottom: 6px;">⏸️</div>
+      <div class="popup-title">게임 일시정지</div>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">잠시 멈춘 상태입니다.</p>
+      <button class="btn-main" id="btnResume">계속하기 ▶️</button>
+      <button class="btn-sub" id="btnQuitPause">처음으로 돌아가기</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="resultModal">
+    <div class="popup-card">
+      <div style="font-size: 48px; margin-bottom: 6px;" id="resultIcon">👑</div>
+      <div class="popup-title" id="resultTitle">100층 정상 정복!</div>
+      
+      <div style="background: #f8fafc; border-radius: 16px; padding: 14px; margin: 14px 0;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+          <span style="color: #64748b;">도달 층수:</span>
+          <span style="font-weight: 800; color: #0284c7;" id="resultFloor">100F</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b;">총 소요 시간:</span>
+          <span style="font-weight: 800; color: #16a34a;" id="resultTime">03분 24초</span>
+        </div>
+      </div>
+
+      <button class="btn-main" id="btnRestart">다시 도전하기 🔄</button>
+      <button class="btn-sub" id="btnHomeResult">처음으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 수학 기호가 모두 깔끔한 한국어 및 표준 텍스트 기호로 정리된 100가지 고유 문항 데이터
+const quizBank = [
+  { q: "두 쌍의 대변이 각각 평행한 사각형은 평행사변형이다.", a: true, e: "평행사변형의 정의는 두 쌍의 대변이 각각 평행한 사각형입니다." },
+  { q: "평행사변형의 두 대각선은 서로를 이등분한다.", a: true, e: "평행사변형의 주요 성질 중 하나로 두 대각선은 서로 다른 것을 이등분합니다." },
+  { q: "네 내각의 크기가 모두 같은 사각형은 직사각형이다.", a: true, e: "직사각형의 정의는 네 내각의 크기가 모두 90도로 같은 사각형입니다." },
+  { q: "마름모의 두 대각선의 길이는 항상 같다.", a: false, e: "마름모의 두 대각선은 수직이등분하지만 길이는 다를 수 있습니다. (길이가 같으면 정사각형)" },
+  { q: "한 내각이 직각인 평행사변형은 직사각형이다.", a: true, e: "평행사변형에서 한 내각이 90도가 되면 네 내각이 모두 직각이 되어 직사각형이 됩니다." },
+  { q: "이웃하는 두 변의 길이가 같은 평행사변형은 마름모이다.", a: true, e: "평행사변형은 대변의 길이가 같으므로 이웃한 변까지 같아지면 네 변의 길이가 같아져 마름모가 됩니다." },
+  { q: "직사각형의 두 대각선은 서로 수직으로 만난다.", a: false, e: "직사각형의 두 대각선은 길이가 같지만 수직으로 만나지는 않습니다. (수직이면 정사각형)" },
+  { q: "정사각형은 직사각형인 동시에 마름모이다.", a: true, e: "정사각형은 네 각이 같고(직사각형) 네 변이 같으므로(마름모) 두 성질을 모두 가집니다." },
+  { q: "등변사다리꼴의 두 대각선의 길이는 같다.", a: true, e: "등변사다리꼴은 평행하지 않은 한 쌍의 대변 길이와 두 대각선의 길이가 같습니다." },
+  { q: "두 대각선이 서로를 수직이등분하는 사각형은 마름모이다.", a: true, e: "두 대각선이 서로 수직이등분하면 네 변의 길이가 같은 마름모가 됩니다." },
+  { q: "마름모의 네 내각의 크기는 모두 같다.", a: false, e: "마름모는 네 변의 길이가 같은 사각형이며, 네 내각의 크기가 모두 같은 것은 직사각형입니다." },
+  { q: "대각선의 길이가 같은 평행사변형은 직사각형이다.", a: true, e: "평행사변형에서 두 대각선의 길이가 같아지면 직사각형이 됩니다." },
+  { q: "사다리꼴은 적어도 한 쌍의 대변이 평행한 사각형이다.", a: true, e: "사다리꼴의 정의는 한 쌍 이상의 대변이 평행한 사각형입니다." },
+  { q: "등변사다리꼴의 밑변의 양 끝각의 크기는 같다.", a: true, e: "등변사다리꼴은 아랫변의 양 끝각의 크기가 같은 사다리꼴입니다." },
+  { q: "두 대각선이 서로 수직인 직사각형은 정사각형이다.", a: true, e: "직사각형에 마름모의 성질(대각선 수직)이 추가되면 정사각형이 됩니다." },
+  { q: "평행사변형의 두 대변의 길이는 서로 같다.", a: true, e: "평행사변형의 두 쌍의 대변의 길이는 각각 같습니다." },
+  { q: "두 대각선의 길이가 같고 서로 수직이등분하는 사각형은 정사각형이다.", a: true, e: "대각선 길이가 같고(직사각형) 수직이등분(마름모)하므로 정사각형입니다." },
+  { q: "모든 평행사변형은 사다리꼴이다.", a: true, e: "사다리꼴(한 쌍 이상 평행)에 평행사변형(두 쌍 평행)이 포함됩니다." },
+  { q: "모든 마름모는 정사각형이다.", a: false, e: "마름모 중 네 내각의 크기가 모두 직각인 것만 정사각형입니다." },
+  { q: "직사각형의 두 대각선은 서로를 이등분한다.", a: true, e: "직사각형은 평행사변형의 일종이므로 두 대각선이 서로를 이등분합니다." },
+  { q: "평행사변형의 이웃하는 두 내각의 크기의 합은 180도이다.", a: true, e: "평행선의 성질에 의해 평행사변형의 이웃한 두 각의 합은 항상 180도입니다." },
+  { q: "네 변의 길이가 모두 같은 사각형은 마름모이다.", a: true, e: "네 변의 길이가 모두 같은 사각형이 마름모의 정의입니다." },
+  { q: "두 대각선의 길이가 같은 사각형은 항상 직사각형이다.", a: false, e: "등변사다리꼴도 두 대각선의 길이가 같지만 직사각형이 아닙니다." },
+  { q: "정사각형의 두 대각선은 서로를 수직이등분한다.", a: true, e: "정사각형은 마름모의 성질을 가지고 있으므로 대각선이 서로 수직이등분합니다." },
+  { q: "등변사다리꼴의 평행하지 않은 한 쌍의 대변의 길이는 같다.", a: true, e: "등변사다리꼴은 평행하지 않은 한 쌍의 대변 길이가 서로 같습니다." },
+  { q: "이웃하는 두 내각의 크기가 같은 평행사변형은 직사각형이다.", a: true, e: "이웃한 두 각의 합이 180도인데 두 각이 같으므로 한 각이 90도가 되어 직사각형이 됩니다." },
+  { q: "두 대각선이 서로 수직인 평행사변형은 마름모이다.", a: true, e: "평행사변형에서 두 대각선이 수직으로 만나면 마름모가 됩니다." },
+  { q: "사다리꼴의 두 대각선은 항상 서로를 이등분한다.", a: false, e: "사다리꼴은 대각선이 서로를 이등분하지 않습니다." },
+  { q: "정사각형의 두 대각선의 길이는 서로 같다.", a: true, e: "정사각형은 직사각형의 성질을 가지므로 두 대각선의 길이가 같습니다." },
+  { q: "등변사다리꼴의 두 대각선은 서로를 이등분한다.", a: false, e: "등변사다리꼴은 두 대각선의 길이가 같지만 서로를 이등분하지는 않습니다." },
+  { q: "두 쌍의 대각의 크기가 각각 같은 사각형은 평행사변형이다.", a: true, e: "두 쌍의 대각의 크기가 각각 같으면 평행사변형이 됩니다." },
+  { q: "마름모는 항상 평행사변형이다.", a: true, e: "마름모는 네 변의 길이가 같아 두 쌍의 대변 길이가 같으므로 평행사변형입니다." },
+  { q: "직사각형은 항상 평행사변형이다.", a: true, e: "직사각형은 네 각이 같아 두 쌍의 대각 크기가 같으므로 평행사변형입니다." },
+  { q: "한 쌍의 대변이 평행하고 그 길이가 같은 사각형은 평행사변형이다.", a: true, e: "평행사변형이 되기 위한 핵심 조건 중 하나입니다." },
+  { q: "네 내각의 크기가 같고 네 변의 길이가 같은 사각형은 정사각형이다.", a: true, e: "정사각형의 정확한 정의입니다." },
+  { q: "등변사다리꼴의 아랫변의 양 끝각의 합은 180도이다.", a: false, e: "등변사다리꼴의 아랫변 양 끝각은 크기가 서로 같지만 합이 180도가 되지는 않습니다." },
+  { q: "두 대각선의 길이가 같고 서로를 이등분하는 사각형은 직사각형이다.", a: true, e: "대각선 이등분(평행사변형) + 대각선 길이 같음 = 직사각형입니다." },
+  { q: "이웃하는 두 변의 길이가 같은 직사각형은 정사각형이다.", a: true, e: "직사각형에 마름모 성질(이웃변 같음)이 추가되면 정사각형입니다." },
+  { q: "평행사변형의 두 대각선의 길이는 항상 같다.", a: false, e: "일반적인 평행사변형은 두 대각선의 길이가 다릅니다." },
+  { q: "마름모의 두 대각선은 서로를 이등분한다.", a: true, e: "마름모는 평행사변형이므로 두 대각선이 서로를 수직이등분합니다." },
+  { q: "직사각형의 네 변의 길이는 모두 같다.", a: false, e: "직사각형은 네 변의 길이가 항상 같지는 않습니다. (같으면 정사각형)" },
+  { q: "정사각형의 한 내각의 크기는 90도이다.", a: true, e: "정사각형은 네 내각의 크기가 모두 90도입니다." },
+  { q: "평행사변형에서 대변의 길이는 모두 다르다.", a: false, e: "평행사변형의 두 쌍의 대변의 길이는 각각 같습니다." },
+  { q: "두 대각선이 수직으로 만나는 사각형은 모두 마름모이다.", a: false, e: "대각선이 수직이라도 두 대각선이 서로를 이등분하지 않으면 마름모가 아닙니다." },
+  { q: "등변사다리꼴의 이웃한 상하 내각의 합은 180도이다.", a: true, e: "위 아래 변이 평행하므로 동위각/업각 위치의 이웃한 상하 내각의 합은 180도입니다." },
+  { q: "두 대각선이 서로를 이등분하는 사각형은 평행사변형이다.", a: true, e: "두 대각선이 서로 이등분하면 평행사변형이 됩니다." },
+  { q: "평행사변형의 한 대각선은 평행사변형의 넓이를 2등분한다.", a: true, e: "합동인 두 삼각형으로 나뉘므로 넓이가 정확히 이등분됩니다." },
+  { q: "마름모의 두 대각선이 이루는 각은 90도이다.", a: true, e: "마름모의 두 대각선은 서로 수직으로 만납니다." },
+  { q: "직사각형의 각 변의 중점을 연결하면 마름모가 된다.", a: true, e: "직사각형의 각 변의 중점을 순서대로 연결하면 마름모가 됩니다." },
+  { q: "마름모의 각 변의 중점을 연결하면 직사각형이 된다.", a: true, e: "마름모의 각 변의 중점을 순서대로 연결하면 직사각형이 됩니다." },
+  { q: "평행사변형의 각 변의 중점을 연결하면 평행사변형이 된다.", a: true, e: "평행사변형의 중점 연결 사각형은 평행사변형입니다." },
+  { q: "정사각형의 각 변의 중점을 연결하면 정사각형이 된다.", a: true, e: "정사각형의 중점 연결 사각형은 정사각형입니다." },
+  { q: "등변사다리꼴의 각 변의 중점을 연결하면 마름모가 된다.", a: true, e: "등변사다리꼴의 두 대각선 길이가 같으므로 중점 연결 사각형은 마름모가 됩니다." },
+  { q: "사다리꼴의 중점 연결 사각형은 항상 직사각형이다.", a: false, e: "일반 사다리꼴의 중점 연결 사각형은 평행사변형입니다." },
+  { q: "평행사변형이 마름모가 되려면 한 내각이 직각이어야 한다.", a: false, e: "한 내각이 직각이 되면 직사각형이 되며, 마름모가 되려면 이웃변 길이가 같아야 합니다." },
+  { q: "평행사변형이 직사각형이 되려면 두 대각선의 길이가 같아야 한다.", a: true, e: "평행사변형에서 대각선 길이가 같아지면 직사각형이 됩니다." },
+  { q: "직사각형이 정사각형이 되려면 두 대각선이 수직이어야 한다.", a: true, e: "직사각형에 마름모 성질(대각선 수직)이 더해지면 정사각형이 됩니다." },
+  { q: "마름모가 정사각형이 되려면 한 내각이 직각이어야 한다.", a: true, e: "마름모에 직사각형 성질(한 내각 직각)이 더해지면 정사각형이 됩니다." },
+  { q: "평행사변형이 정사각형이 되려면 직사각형 조건과 마름모 조건을 모두 만족해야 한다.", a: true, e: "두 성질을 모두 갖추어야 정사각형이 됩니다." },
+  { q: "사다리꼴 중 평행하지 않은 한 쌍의 대변의 길이가 같은 것은 등변사다리꼴이다.", a: true, e: "등변사다리꼴의 중요한 성질입니다." },
+  { q: "모든 직사각형은 마름모이다.", a: false, e: "네 변의 길이가 같지 않은 직사각형은 마름모가 아닙니다." },
+  { q: "정사각형은 4개의 대칭축을 가지는 선대칭도형이다.", a: true, e: "정사각형은 4개의 대칭축을 갖습니다." },
+  { q: "직사각형의 두 대각선에 의해 나뉘는 4개의 삼각형 넓이는 모두 같다.", a: true, e: "대각선의 이등분 성질에 의해 4개 삼각형의 넓이가 모두 같습니다." },
+  { q: "마름모의 두 대각선에 의해 나뉘는 4개의 삼각형은 모두 합동이다.", a: true, e: "네 변이 같고 수직이등분하므로 4개의 직각삼각형은 모두 합동입니다." },
+  { q: "평행사변형의 두 대각선의 교점은 대각선의 중점이다.", a: true, e: "두 대각선이 서로 이등분하므로 교점이 중점입니다." },
+  { q: "사다리꼴은 두 쌍의 대변이 평행한 사각형이다.", a: false, e: "사다리꼴은 한 쌍 이상의 대변이 평행한 사각형입니다." },
+  { q: "등변사다리꼴의 두 대각선은 서로 수직이다.", a: false, e: "등변사다리꼴의 대각선은 길이가 같지만 항상 수직인 것은 아닙니다." },
+  { q: "평행사변형의 대각선의 길이는 항상 변의 길이보다 길다.", a: false, e: "각도에 따라 대각선의 길이가 변의 길이보다 짧을 수 있습니다." },
+  { q: "마름모의 한 대각선은 내각을 이등분한다.", a: true, e: "마름모의 대각선은 양 끝의 내각을 각각 2등분합니다." },
+  { q: "직사각형의 두 대각선이 이루는 각이 90도이면 정사각형이다.", a: true, e: "직사각형에서 대각선이 수직으로 만나면 정사각형입니다." },
+  { q: "모든 정사각형은 평행사변형이다.", a: true, e: "정사각형은 두 쌍의 대변이 평행하므로 평행사변형입니다." },
+  { q: "두 대각선이 수직으로 만나지만 서로를 이등분하지 않는 사각형은 마름모이다.", a: false, e: "마름모는 반드시 두 대각선이 서로를 이등분해야 합니다." },
+  { q: "평행사변형에서 대각의 크기는 서로 같다.", a: true, e: "평행사변형의 마주보는 두 대각의 크기는 각각 같습니다." },
+  { q: "직사각형의 한 대각선의 길이가 5cm이면 다른 대각선도 5cm이다.", a: true, e: "직사각형의 두 대각선 길이는 같습니다." },
+  { q: "마름모의 네 변의 길이의 합은 한 변의 길이의 4배이다.", a: true, e: "마름모는 네 변의 길이가 모두 같기 때문입니다." },
+  { q: "등변사다리꼴은 대칭축이 1개인 선대칭도형이다.", a: true, e: "등변사다리꼴은 아윗변과 아랫변의 수직이등분선을 대칭축으로 하는 선대칭도형입니다." },
+  { q: "사다리꼴에서 평행한 두 변의 길이는 항상 같다.", a: false, e: "평행한 두 변의 길이가 같아지면 평행사변형이 됩니다." },
+  { q: "평행사변형 ABCD에서 ∠A + ∠C = 180° 이면 직사각형이다.", a: true, e: "대각의 크기가 같으므로 ∠A = ∠C = 90°가 되어 직사각형이 됩니다." },
+  { q: "평행사변형 ABCD에서 선분 AB = 선분 BC 이면 마름모이다.", a: true, e: "이웃하는 두 변의 길이가 같으므로 마름모입니다." },
+  { q: "평행사변형 ABCD에서 대각선 AC와 BD가 수직이면 마름모이다.", a: true, e: "두 대각선이 수직으로 만나므로 마름모입니다." },
+  { q: "평행사변형 ABCD에서 선분 AC = 선분 BD 이면 직사각형이다.", a: true, e: "두 대각선의 길이가 같으므로 직사각형입니다." },
+  { q: "직사각형 ABCD에서 대각선 AC와 BD가 수직이면 정사각형이다.", a: true, e: "직사각형에 마름모 조건(대각선 수직)이 추가되었으므로 정사각형입니다." },
+  { q: "마름모 ABCD에서 선분 AC = 선분 BD 이면 정사각형이다.", a: true, e: "마름모에 직사각형 조건(대각선 길이 같음)이 추가되었으므로 정사각형입니다." },
+  { q: "네 변의 길이가 같고 한 내각이 90도인 사각형은 정사각형이다.", a: true, e: "네 변이 같고(마름모) 한 내각이 90도(직사각형)이므로 정사각형입니다." },
+  { q: "평행사변형의 두 대각선은 서로 다른 것을 수직이등분한다.", a: false, e: "일반 평행사변형은 이등분만 하며, 수직이 추가되면 마름모가 됩니다." },
+  { q: "두 대각선의 길이가 같은 등변사다리꼴은 직사각형이다.", a: false, e: "등변사다리꼴은 대각선 길이가 같지만 직사각형은 아닙니다." },
+  { q: "사다리꼴은 평행사변형이다.", a: false, e: "사다리꼴 중 두 쌍의 대변이 모두 평행한 것만 평행사변형입니다." },
+  { q: "정사각형의 두 대각선의 교점에서 네 꼭짓점까지의 거리는 모두 같다.", a: true, e: "대각선 길이가 같고 서로 이등분하므로 거리가 모두 같습니다." },
+  { q: "마름모의 두 대각선의 교점에서 네 꼭짓점까지의 거리는 모두 같다.", a: false, e: "마름모는 대각선 길이가 다를 수 있으므로 거리가 항상 같지는 않습니다." },
+  { q: "직사각형의 두 대각선의 교점에서 네 변까지의 거리는 모두 같다.", a: false, e: "네 변까지의 거리가 같으려면 마름모(정사각형)이어야 합니다." },
+  { q: "정사각형의 두 대각선의 교점에서 네 변까지의 거리는 모두 같다.", a: true, e: "정사각형은 네 변까지의 거리가 모두 같습니다." },
+  { q: "평행사변형의 대각선에 의해 나누어진 두 삼각형은 합동이다.", a: true, e: "합동조건에 의해 나누어진 두 삼각형은 항상 합동입니다." },
+  { q: "마름모의 한 변의 길이를 알면 둘레의 길이를 구할 수 있다.", a: true, e: "네 변의 길이가 같으므로 한 변에 4를 곱하면 됩니다." },
+  { q: "직사각형의 한 변의 길이를 알면 둘레의 길이를 구할 수 있다.", a: false, e: "이웃한 두 변의 길이를 모두 알아야 둘레를 구할 수 있습니다." },
+  { q: "등변사다리꼴의 두 대각선의 교점에 의해 나누어진 아래쪽 삼각형은 이등변삼각형이다.", a: true, e: "아랫변의 양 끝각의 크기가 같으므로 이등변삼각형이 됩니다." },
+  { q: "평행사변형의 넓이는 (밑변의 길이) × (높이)이다.", a: true, e: "평행사변형의 넓이 구하는 공식입니다." },
+  { q: "마름모의 넓이는 (한 대각선의 길이) × (다른 대각선의 길이) ÷ 2이다.", a: true, e: "두 대각선이 수직이등분하므로 마름모의 넓이 공식이 성립합니다." },
+  { q: "사다리꼴의 넓이는 (윗변 + 아랫변) × (높이) ÷ 2이다.", a: true, e: "사다리꼴의 넓이 공식입니다." },
+  { q: "모든 평행사변형은 원에 내접한다.", a: false, e: "마주보는 두 대각의 합이 180도인 직사각형이나 정사각형만 원에 내접합니다." },
+  { q: "모든 직사각형은 원에 내접한다.", a: true, e: "마주보는 두 대각의 합이 180도(90도+90도)이므로 항상 원에 내접합니다." }
+];
+
+let currentQuestions = [];
+let currentFloor = 1; // 1층부터 시작
+let lives = 3;
+let selectedTime = 300;
+let timeLeft = 300;
+let timeSpent = 0;
+let timerId = null;
+let isPaused = false;
+
+const stepLayout = [
+  { left: 35, top: 310 },
+  { left: 75, top: 260 },
+  { left: 115, top: 210 },
+  { left: 155, top: 160 },
+  { left: 195, top: 110 },
+  { left: 235, top: 60 }
+];
+
+const startModal = document.getElementById('startModal');
+const wrongModal = document.getElementById('wrongModal');
+const pauseModal = document.getElementById('pauseModal');
+const resultModal = document.getElementById('resultModal');
+
+const qFloorTag = document.getElementById('qFloorTag');
+const qText = document.getElementById('qText');
+const heartBox = document.getElementById('heartBox');
+const timeText = document.getElementById('timeText');
+const floorText = document.getElementById('floorText');
+const stairsStage = document.getElementById('stairsStage');
+const charizard = document.getElementById('charizard');
+
+function setSelectTime(sec) {
+  selectedTime = sec;
+  document.getElementById('btnTime5').classList.toggle('active', sec === 300);
+  document.getElementById('btnTime10').classList.toggle('active', sec === 600);
+}
+
+function makeShuffledQuestions() {
+  let list = JSON.parse(JSON.stringify(quizBank));
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+function buildStepView() {
+  const oldSteps = document.querySelectorAll('.stair-item');
+  oldSteps.forEach(s => s.remove());
+
+  stepLayout.forEach((pos, idx) => {
+    const step = document.createElement('div');
+    step.className = 'stair-item';
+    step.id = `stepItem_${idx}`;
+    step.style.left = `${pos.left}px`;
+    step.style.top = `${pos.top}px`;
+    stairsStage.appendChild(step);
+  });
+}
+
+// 계단 층수 갱신 (1F부터 차례대로 표시)
+function updateStepLabels() {
+  stepLayout.forEach((_, idx) => {
+    const stepEl = document.getElementById(`stepItem_${idx}`);
+    if (stepEl) {
+      const floorVal = currentFloor + (idx - 1);
+      stepEl.classList.toggle('current', idx === 1);
+      
+      if (floorVal < 1) {
+        stepEl.style.opacity = '0'; // 1층 미만은 투명 처리
+      } else {
+        stepEl.style.opacity = '1';
+        if (floorVal === 100) {
+          stepEl.textContent = '100F 🏆';
+          stepEl.classList.add('goal');
+        } else {
+          stepEl.textContent = `${floorVal}F`;
+          stepEl.classList.remove('goal');
+        }
+      }
+    }
+  });
+
+  charizard.style.left = `${stepLayout[1].left + 35}px`;
+  charizard.style.top = `${stepLayout[1].top - 48}px`;
+}
+
+function initGame() {
+  currentQuestions = makeShuffledQuestions();
+  currentFloor = 1; // 1층에서 등반 시작
+  lives = 3;
+  timeLeft = selectedTime;
+  timeSpent = 0;
+  isPaused = false;
+
+  startModal.classList.remove('show');
+  resultModal.classList.remove('show');
+  pauseModal.classList.remove('show');
+
+  buildStepView();
+  updateUIHeader();
+  updateStepLabels();
+  loadCurrentQuestion();
+  runTimer();
+}
+
+function loadCurrentQuestion() {
+  if (currentFloor > 100) {
+    finishGame(true);
+    return;
+  }
+  qFloorTag.textContent = `${currentFloor}층 도전`;
+  qText.textContent = currentQuestions[currentFloor - 1].q;
+}
+
+function handleAnswer(userAns) {
+  if (isPaused) return;
+
+  const currentQ = currentQuestions[currentFloor - 1];
+
+  if (userAns === currentQ.a) {
+    // 1층 단위 점프 애니메이션
+    charizard.style.left = `${stepLayout[2].left + 35}px`;
+    charizard.style.top = `${stepLayout[2].top - 48}px`;
+    charizard.classList.add('jumping');
+
+    setTimeout(() => {
+      charizard.classList.remove('jumping');
+      currentFloor++;
+      updateUIHeader();
+      updateStepLabels();
+      loadCurrentQuestion();
+    }, 380);
+
+  } else {
+    lives--;
+    updateUIHeader();
+
+    if (lives <= 0) {
+      finishGame(false);
+    } else {
+      document.getElementById('wrongAnswerDiff').innerHTML = 
+        `올바른 정답: <b>${currentQ.a ? 'O (참)' : 'X (거짓)'}</b> / 내가 고른 답: <span style="color:#e11d48;">${userAns ? 'O' : 'X'}</span>`;
+      document.getElementById('explainContent').textContent = currentQ.e;
+      wrongModal.classList.add('show');
+    }
+  }
+}
+
+function updateUIHeader() {
+  heartBox.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+  floorText.textContent = `${currentFloor}F`;
+
+  const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+  const s = (timeLeft % 60).toString().padStart(2, '0');
+  timeText.textContent = `${m}:${s}`;
+}
+
+function runTimer() {
+  clearInterval(timerId);
+  timerId = setInterval(() => {
+    if (!isPaused) {
+      timeLeft--;
+      timeSpent++;
+      updateUIHeader();
+
+      if (timeLeft <= 0) {
+        finishGame(false);
+      }
+    }
+  }, 1000);
+}
+
+function finishGame(isSuccess) {
+  clearInterval(timerId);
+
+  const mSpent = Math.floor(timeSpent / 60).toString().padStart(2, '0');
+  const sSpent = (timeSpent % 60).toString().padStart(2, '0');
+
+  document.getElementById('resultFloor').textContent = `${Math.min(100, currentFloor)}F / 100F`;
+  document.getElementById('resultTime').textContent = `${mSpent}분 ${sSpent}초`;
+
+  if (isSuccess || currentFloor > 100) {
+    document.getElementById('resultIcon').textContent = '👑';
+    document.getElementById('resultTitle').textContent = '100층 정상 정복!';
+  } else {
+    document.getElementById('resultIcon').textContent = '💥';
+    document.getElementById('resultTitle').textContent = '등반 실패 (0층 추락)';
+  }
+
+  resultModal.classList.add('show');
+}
+
+document.getElementById('btnStartGame').addEventListener('click', initGame);
+document.getElementById('btnO').addEventListener('click', () => handleAnswer(true));
+document.getElementById('btnX').addEventListener('click', () => handleAnswer(false));
+
+document.getElementById('btnNextWrong').addEventListener('click', () => {
+  wrongModal.classList.remove('show');
+  loadCurrentQuestion();
+});
+
+window.addEventListener('keydown', (e) => {
+  if (wrongModal.classList.contains('show') || startModal.classList.contains('show') || resultModal.classList.contains('show')) return;
+  if (e.key === 'ArrowLeft') handleAnswer(true);
+  if (e.key === 'ArrowRight') handleAnswer(false);
+});
+
+document.getElementById('btnPause').addEventListener('click', () => {
+  isPaused = true;
+  pauseModal.classList.add('show');
+});
+
+document.getElementById('btnResume').addEventListener('click', () => {
+  isPaused = false;
+  pauseModal.classList.remove('show');
+});
+
+document.getElementById('btnQuitPause').addEventListener('click', () => {
+  pauseModal.classList.remove('show');
+  startModal.classList.add('show');
+  clearInterval(timerId);
+});
+
+document.getElementById('btnHome').addEventListener('click', () => {
+  isPaused = true;
+  pauseModal.classList.add('show');
+});
+
+document.getElementById('btnRestart').addEventListener('click', initGame);
+document.getElementById('btnHomeResult').addEventListener('click', () => {
+  resultModal.classList.remove('show');
+  startModal.classList.add('show');
+});
+</script>
+</body>
+</html>
