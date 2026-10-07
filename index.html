@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>여러가지 사각형 하늘계단 게임</title>
+  <title>여러가지 사각형 하늘계단</title>
   <style>
     :root {
       --bg-gradient: linear-gradient(180deg, #38bdf8 0%, #bae6fd 100%);
@@ -17,6 +17,7 @@
       box-sizing: border-box;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 0;
@@ -195,6 +196,13 @@
       box-shadow: 0 5px 0 #713f12, 0 0 14px rgba(250, 204, 21, 0.9);
     }
 
+    .stair-item.checkpoint {
+      background: #a855f7;
+      border-color: #7e22ce;
+      color: #ffffff;
+      box-shadow: 0 5px 0 #6b21a8;
+    }
+
     .stair-item.goal {
       background: #f97316;
       border-color: #c2410c;
@@ -250,6 +258,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+      z-index: 10;
     }
 
     .btn-ox {
@@ -267,6 +276,7 @@
       justify-content: center;
       gap: 1px;
       transition: transform 0.08s;
+      touch-action: manipulation;
     }
 
     .btn-ox:active {
@@ -299,27 +309,31 @@
       justify-content: center;
       align-items: center;
       padding: 16px;
-      z-index: 50;
+      z-index: 100;
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
     }
 
     .modal-overlay.show {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
     }
 
     .popup-card {
       background: white;
       width: 100%;
-      max-width: 340px;
+      max-width: 350px;
       border-radius: 26px;
       padding: 22px 20px;
       box-shadow: 0 20px 30px rgba(0,0,0,0.18);
       text-align: center;
       transform: scale(0.9);
       transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      z-index: 101;
     }
 
     .modal-overlay.show .popup-card {
@@ -356,6 +370,7 @@
       font-weight: 800;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+      touch-action: manipulation;
     }
 
     .btn-main:active {
@@ -373,29 +388,45 @@
       font-weight: 700;
       cursor: pointer;
       margin-top: 6px;
+      touch-action: manipulation;
     }
 
-    .time-options {
-      display: flex;
+    .floor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin: 14px 0;
     }
 
-    .time-chip {
-      flex: 1;
-      padding: 11px;
+    .floor-chip {
+      padding: 11px 8px;
       border: 2px solid #cbd5e1;
       background: white;
       border-radius: 14px;
       font-weight: 700;
+      font-size: 13px;
       color: #475569;
       cursor: pointer;
+      transition: all 0.15s;
+      touch-action: manipulation;
     }
 
-    .time-chip.active {
+    .floor-chip.active {
       border-color: #0284c7;
       background: #f0f9ff;
       color: #0284c7;
+    }
+
+    .cp-notice {
+      background: #f3e8ff;
+      border: 1px dashed #a855f7;
+      color: #6b21a8;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      display: none;
     }
   </style>
 </head>
@@ -405,13 +436,12 @@
   <div class="header">
     <div class="header-left">
       <button class="btn-icon" id="btnHome">🏠</button>
-      <span class="title-text">여러가지 사각형 하늘계단 게임</span>
+      <span class="title-text">여러가지 사각형 하늘계단</span>
     </div>
     <div class="header-right">
       <div class="heart-box" id="heartBox">❤️❤️❤️</div>
-      <div class="badge-info">⏱️ <span id="timeText">05:00</span></div>
       <div class="badge-info" style="background:#fef3c7; border-color:#fde047; color:#854d0e;">
-        🚩 <span id="floorText">1F</span>
+        🚩 <span id="floorText">1 / 10F</span>
       </div>
       <button class="btn-icon" id="btnPause">⏸️</button>
     </div>
@@ -458,24 +488,31 @@
     </div>
   </div>
 
+  <!-- 시작 모달 -->
   <div class="modal-overlay show" id="startModal">
     <div class="popup-card">
       <div style="font-size: 46px; margin-bottom: 6px;">🔥🐉</div>
-      <div class="popup-title">여러가지 사각형 하늘계단</div>
+      <div class="popup-title">목표 층수 선택</div>
       <p style="font-size: 13px; color: #64748b; line-height: 1.4;">
-        중2-2 수학 사각형의 성질 100문제 제패!<br>
-        1층부터 출발하여 100층 정상에 도달하세요!
+        원하는 목표 층수를 선택하여 등반을 시작하세요!<br>
+        10층마다 체크포인트가 자동으로 저장됩니다.
       </p>
 
-      <div class="time-options">
-        <button class="time-chip active" id="btnTime5" onclick="setSelectTime(300)">⏱️ 5분 도전</button>
-        <button class="time-chip" id="btnTime10" onclick="setSelectTime(600)">⏱️ 10분 도전</button>
+      <div class="cp-notice" id="startCpNotice"></div>
+
+      <div class="floor-grid">
+        <button class="floor-chip active" id="chip10">🏁 10층 도전</button>
+        <button class="floor-chip" id="chip25">🏁 25층 도전</button>
+        <button class="floor-chip" id="chip50">🏁 50층 도전</button>
+        <button class="floor-chip" id="chip100">🏆 100층 도전</button>
       </div>
 
-      <button class="btn-main" id="btnStartGame">등반 시작하기 (100F 도전)</button>
+      <button class="btn-main" id="btnStartGame">1층부터 등반 시작 🚀</button>
+      <button class="btn-sub" id="btnResumeCP" style="display:none;">📍 저장된 체크포인트부터 시작</button>
     </div>
   </div>
 
+  <!-- 오답 모달 -->
   <div class="modal-overlay" id="wrongModal">
     <div class="popup-card">
       <div style="font-size: 38px; margin-bottom: 2px;">💔</div>
@@ -491,6 +528,7 @@
     </div>
   </div>
 
+  <!-- 일시정지 모달 -->
   <div class="modal-overlay" id="pauseModal">
     <div class="popup-card">
       <div style="font-size: 38px; margin-bottom: 6px;">⏸️</div>
@@ -501,30 +539,32 @@
     </div>
   </div>
 
+  <!-- 결과 모달 -->
   <div class="modal-overlay" id="resultModal">
     <div class="popup-card">
       <div style="font-size: 48px; margin-bottom: 6px;" id="resultIcon">👑</div>
-      <div class="popup-title" id="resultTitle">100층 정상 정복!</div>
+      <div class="popup-title" id="resultTitle">목표 달성 성공!</div>
       
       <div style="background: #f8fafc; border-radius: 16px; padding: 14px; margin: 14px 0;">
         <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
-          <span style="color: #64748b;">도달 층수:</span>
-          <span style="font-weight: 800; color: #0284c7;" id="resultFloor">100F</span>
+          <span style="color: #64748b;">최종 달성:</span>
+          <span style="font-weight: 800; color: #0284c7;" id="resultFloor">10 / 10F</span>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 13px;">
           <span style="color: #64748b;">총 소요 시간:</span>
-          <span style="font-weight: 800; color: #16a34a;" id="resultTime">03분 24초</span>
+          <span style="font-weight: 800; color: #16a34a;" id="resultTime">01분 24초</span>
         </div>
       </div>
 
-      <button class="btn-main" id="btnRestart">다시 도전하기 🔄</button>
+      <button class="btn-main" id="btnRestartCP" style="display:none;">📍 최고 체크포인트부터 이어서 도전</button>
+      <button class="btn-sub" id="btnRestart1F">1층부터 새로 시작하기 🔄</button>
       <button class="btn-sub" id="btnHomeResult">처음으로 돌아가기</button>
     </div>
   </div>
 </div>
 
 <script>
-// 수학 기호가 모두 깔끔한 한국어 및 표준 텍스트 기호로 정리된 100가지 고유 문항 데이터
+// 순수 중2-2 사각형의 성질 교과과정 100문항 (외접원 등 원 관련 문항 전면 제외)
 const quizBank = [
   { q: "두 쌍의 대변이 각각 평행한 사각형은 평행사변형이다.", a: true, e: "평행사변형의 정의는 두 쌍의 대변이 각각 평행한 사각형입니다." },
   { q: "평행사변형의 두 대각선은 서로를 이등분한다.", a: true, e: "평행사변형의 주요 성질 중 하나로 두 대각선은 서로 다른 것을 이등분합니다." },
@@ -601,7 +641,7 @@ const quizBank = [
   { q: "평행사변형에서 대각의 크기는 서로 같다.", a: true, e: "평행사변형의 마주보는 두 대각의 크기는 각각 같습니다." },
   { q: "직사각형의 한 대각선의 길이가 5cm이면 다른 대각선도 5cm이다.", a: true, e: "직사각형의 두 대각선 길이는 같습니다." },
   { q: "마름모의 네 변의 길이의 합은 한 변의 길이의 4배이다.", a: true, e: "마름모는 네 변의 길이가 모두 같기 때문입니다." },
-  { q: "등변사다리꼴은 대칭축이 1개인 선대칭도형이다.", a: true, e: "등변사다리꼴은 아윗변과 아랫변의 수직이등분선을 대칭축으로 하는 선대칭도형입니다." },
+  { q: "등변사다리꼴은 대칭축이 1개인 선대칭도형이다.", a: true, e: "등변사다리꼴은 수직이등분선을 대칭축으로 하는 선대칭도형입니다." },
   { q: "사다리꼴에서 평행한 두 변의 길이는 항상 같다.", a: false, e: "평행한 두 변의 길이가 같아지면 평행사변형이 됩니다." },
   { q: "평행사변형 ABCD에서 ∠A + ∠C = 180° 이면 직사각형이다.", a: true, e: "대각의 크기가 같으므로 ∠A = ∠C = 90°가 되어 직사각형이 됩니다." },
   { q: "평행사변형 ABCD에서 선분 AB = 선분 BC 이면 마름모이다.", a: true, e: "이웃하는 두 변의 길이가 같으므로 마름모입니다." },
@@ -624,15 +664,15 @@ const quizBank = [
   { q: "평행사변형의 넓이는 (밑변의 길이) × (높이)이다.", a: true, e: "평행사변형의 넓이 구하는 공식입니다." },
   { q: "마름모의 넓이는 (한 대각선의 길이) × (다른 대각선의 길이) ÷ 2이다.", a: true, e: "두 대각선이 수직이등분하므로 마름모의 넓이 공식이 성립합니다." },
   { q: "사다리꼴의 넓이는 (윗변 + 아랫변) × (높이) ÷ 2이다.", a: true, e: "사다리꼴의 넓이 공식입니다." },
-  { q: "모든 평행사변형은 원에 내접한다.", a: false, e: "마주보는 두 대각의 합이 180도인 직사각형이나 정사각형만 원에 내접합니다." },
-  { q: "모든 직사각형은 원에 내접한다.", a: true, e: "마주보는 두 대각의 합이 180도(90도+90도)이므로 항상 원에 내접합니다." }
+  { q: "평행사변형의 두 대각선에 의해 만들어지는 4개의 삼각형 넓이는 모두 같다.", a: true, e: "두 대각선이 서로를 이등분하므로 4개 삼각형의 넓이는 모두 같습니다." },
+  { q: "직사각형의 네 내각의 합은 360도이다.", a: true, e: "모든 사각형의 내각의 합은 360도입니다." }
 ];
 
 let currentQuestions = [];
-let currentFloor = 1; // 1층부터 시작
+let currentFloor = 1;
+let targetGoalFloor = 10;
+let highestCheckpoint = 1;
 let lives = 3;
-let selectedTime = 300;
-let timeLeft = 300;
 let timeSpent = 0;
 let timerId = null;
 let isPaused = false;
@@ -654,15 +694,34 @@ const resultModal = document.getElementById('resultModal');
 const qFloorTag = document.getElementById('qFloorTag');
 const qText = document.getElementById('qText');
 const heartBox = document.getElementById('heartBox');
-const timeText = document.getElementById('timeText');
 const floorText = document.getElementById('floorText');
 const stairsStage = document.getElementById('stairsStage');
 const charizard = document.getElementById('charizard');
 
-function setSelectTime(sec) {
-  selectedTime = sec;
-  document.getElementById('btnTime5').classList.toggle('active', sec === 300);
-  document.getElementById('btnTime10').classList.toggle('active', sec === 600);
+function loadCheckpointStorage() {
+  const savedCP = localStorage.getItem('math_sky_stairs_cp');
+  if (savedCP && parseInt(savedCP) > 1) {
+    highestCheckpoint = parseInt(savedCP);
+    const noticeEl = document.getElementById('startCpNotice');
+    noticeEl.style.display = 'block';
+    noticeEl.textContent = `📍 최근 도달 체크포인트: ${highestCheckpoint}F`;
+    const btnResumeCP = document.getElementById('btnResumeCP');
+    btnResumeCP.style.display = 'block';
+    btnResumeCP.textContent = `📍 ${highestCheckpoint}F 체크포인트부터 이어서 시작`;
+  }
+}
+
+function saveCheckpoint(floor) {
+  if (floor % 10 === 0 && floor > highestCheckpoint) {
+    highestCheckpoint = floor;
+    localStorage.setItem('math_sky_stairs_cp', highestCheckpoint);
+  }
+}
+
+function setTargetGoal(goal, btnEl) {
+  targetGoalFloor = goal;
+  document.querySelectorAll('.floor-chip').forEach(c => c.classList.remove('active'));
+  btnEl.classList.add('active');
 }
 
 function makeShuffledQuestions() {
@@ -688,7 +747,6 @@ function buildStepView() {
   });
 }
 
-// 계단 층수 갱신 (1F부터 차례대로 표시)
 function updateStepLabels() {
   stepLayout.forEach((_, idx) => {
     const stepEl = document.getElementById(`stepItem_${idx}`);
@@ -696,17 +754,21 @@ function updateStepLabels() {
       const floorVal = currentFloor + (idx - 1);
       stepEl.classList.toggle('current', idx === 1);
       
-      if (floorVal < 1) {
-        stepEl.style.opacity = '0'; // 1층 미만은 투명 처리
+      if (floorVal < 1 || floorVal > targetGoalFloor) {
+        stepEl.style.opacity = '0';
       } else {
         stepEl.style.opacity = '1';
-        if (floorVal === 100) {
-          stepEl.textContent = '100F 🏆';
-          stepEl.classList.add('goal');
+        if (floorVal === targetGoalFloor) {
+          stepEl.textContent = `${floorVal}F 🏆`;
+          stepEl.className = 'stair-item goal';
+        } else if (floorVal % 10 === 0) {
+          stepEl.textContent = `${floorVal}F 📍`;
+          stepEl.className = 'stair-item checkpoint';
         } else {
           stepEl.textContent = `${floorVal}F`;
-          stepEl.classList.remove('goal');
+          stepEl.className = 'stair-item';
         }
+        if (idx === 1) stepEl.classList.add('current');
       }
     }
   });
@@ -715,17 +777,17 @@ function updateStepLabels() {
   charizard.style.top = `${stepLayout[1].top - 48}px`;
 }
 
-function initGame() {
+function initGame(fromCheckpoint = false) {
   currentQuestions = makeShuffledQuestions();
-  currentFloor = 1; // 1층에서 등반 시작
+  currentFloor = fromCheckpoint ? highestCheckpoint : 1;
   lives = 3;
-  timeLeft = selectedTime;
   timeSpent = 0;
   isPaused = false;
 
   startModal.classList.remove('show');
   resultModal.classList.remove('show');
   pauseModal.classList.remove('show');
+  wrongModal.classList.remove('show');
 
   buildStepView();
   updateUIHeader();
@@ -735,11 +797,11 @@ function initGame() {
 }
 
 function loadCurrentQuestion() {
-  if (currentFloor > 100) {
+  if (currentFloor > targetGoalFloor) {
     finishGame(true);
     return;
   }
-  qFloorTag.textContent = `${currentFloor}층 도전`;
+  qFloorTag.textContent = `${currentFloor}층 도전 (목표: ${targetGoalFloor}F)`;
   qText.textContent = currentQuestions[currentFloor - 1].q;
 }
 
@@ -749,17 +811,23 @@ function handleAnswer(userAns) {
   const currentQ = currentQuestions[currentFloor - 1];
 
   if (userAns === currentQ.a) {
-    // 1층 단위 점프 애니메이션
     charizard.style.left = `${stepLayout[2].left + 35}px`;
     charizard.style.top = `${stepLayout[2].top - 48}px`;
     charizard.classList.add('jumping');
 
     setTimeout(() => {
       charizard.classList.remove('jumping');
+      saveCheckpoint(currentFloor);
+
       currentFloor++;
       updateUIHeader();
       updateStepLabels();
-      loadCurrentQuestion();
+
+      if (currentFloor > targetGoalFloor) {
+        finishGame(true);
+      } else {
+        loadCurrentQuestion();
+      }
     }, 380);
 
   } else {
@@ -779,24 +847,14 @@ function handleAnswer(userAns) {
 
 function updateUIHeader() {
   heartBox.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
-  floorText.textContent = `${currentFloor}F`;
-
-  const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-  const s = (timeLeft % 60).toString().padStart(2, '0');
-  timeText.textContent = `${m}:${s}`;
+  floorText.textContent = `${currentFloor} / ${targetGoalFloor}F`;
 }
 
 function runTimer() {
   clearInterval(timerId);
   timerId = setInterval(() => {
     if (!isPaused) {
-      timeLeft--;
       timeSpent++;
-      updateUIHeader();
-
-      if (timeLeft <= 0) {
-        finishGame(false);
-      }
     }
   }, 1000);
 }
@@ -807,21 +865,39 @@ function finishGame(isSuccess) {
   const mSpent = Math.floor(timeSpent / 60).toString().padStart(2, '0');
   const sSpent = (timeSpent % 60).toString().padStart(2, '0');
 
-  document.getElementById('resultFloor').textContent = `${Math.min(100, currentFloor)}F / 100F`;
+  const reachedFloor = Math.min(targetGoalFloor, currentFloor);
+  document.getElementById('resultFloor').textContent = `${reachedFloor}F / ${targetGoalFloor}F`;
   document.getElementById('resultTime').textContent = `${mSpent}분 ${sSpent}초`;
 
-  if (isSuccess || currentFloor > 100) {
+  if (isSuccess || currentFloor > targetGoalFloor) {
     document.getElementById('resultIcon').textContent = '👑';
-    document.getElementById('resultTitle').textContent = '100층 정상 정복!';
+    document.getElementById('resultTitle').textContent = `${targetGoalFloor}층 정복 성공!`;
   } else {
     document.getElementById('resultIcon').textContent = '💥';
-    document.getElementById('resultTitle').textContent = '등반 실패 (0층 추락)';
+    document.getElementById('resultTitle').textContent = '등반 실패';
+  }
+
+  const btnCP = document.getElementById('btnRestartCP');
+  if (highestCheckpoint > 1) {
+    btnCP.style.display = 'block';
+    btnCP.textContent = `📍 최고 체크포인트(${highestCheckpoint}F)부터 도전`;
+  } else {
+    btnCP.style.display = 'none';
   }
 
   resultModal.classList.add('show');
 }
 
-document.getElementById('btnStartGame').addEventListener('click', initGame);
+document.getElementById('chip10').addEventListener('click', function() { setTargetGoal(10, this); });
+document.getElementById('chip25').addEventListener('click', function() { setTargetGoal(25, this); });
+document.getElementById('chip50').addEventListener('click', function() { setTargetGoal(50, this); });
+document.getElementById('chip100').addEventListener('click', function() { setTargetGoal(100, this); });
+
+document.getElementById('btnStartGame').addEventListener('click', () => initGame(false));
+document.getElementById('btnResumeCP').addEventListener('click', () => initGame(true));
+document.getElementById('btnRestartCP').addEventListener('click', () => initGame(true));
+document.getElementById('btnRestart1F').addEventListener('click', () => initGame(false));
+
 document.getElementById('btnO').addEventListener('click', () => handleAnswer(true));
 document.getElementById('btnX').addEventListener('click', () => handleAnswer(false));
 
@@ -831,7 +907,7 @@ document.getElementById('btnNextWrong').addEventListener('click', () => {
 });
 
 window.addEventListener('keydown', (e) => {
-  if (wrongModal.classList.contains('show') || startModal.classList.contains('show') || resultModal.classList.contains('show')) return;
+  if (wrongModal.classList.contains('show') || startModal.classList.contains('show') || resultModal.classList.contains('show') || pauseModal.classList.contains('show')) return;
   if (e.key === 'ArrowLeft') handleAnswer(true);
   if (e.key === 'ArrowRight') handleAnswer(false);
 });
@@ -857,11 +933,12 @@ document.getElementById('btnHome').addEventListener('click', () => {
   pauseModal.classList.add('show');
 });
 
-document.getElementById('btnRestart').addEventListener('click', initGame);
 document.getElementById('btnHomeResult').addEventListener('click', () => {
   resultModal.classList.remove('show');
   startModal.classList.add('show');
 });
+
+loadCheckpointStorage();
 </script>
 </body>
 </html>
